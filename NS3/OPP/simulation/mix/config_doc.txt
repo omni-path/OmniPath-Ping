@@ -1,0 +1,87 @@
+ENABLE_QCN 1 {0: disable, 1: enable}
+USE_DYNAMIC_PFC_THRESHOLD 1 {0: disable, 1: enable}
+
+PACKET_PAYLOAD_SIZE 1000 {packet size (bytes)}
+
+TOPOLOGY_FILE mix/topology.txt {input file: topoology}
+TOPOLOGY_MODE GENERAL_GRAPH {GENERAL_GRAPH: generic BFS routing, FAT_TREE: k-ary fat-tree compressed initialization, 2D_TORUS/TORUS_2D and 3D_TORUS/TORUS_3D: generic BFS routing with flow coverage excluding host-ToR/ToR-host access links, LEAF_SPINE/LEAFSPINE: compressed routing for k leaf and k/2 spine switches}
+ROUTING_MODE ECMP {ECMP: flow-hash ECMP, PACKET_SPRAY: include current simulator timestamp in ECMP hash input; if omitted, CC_MODE 11/12/13 defaults to PACKET_SPRAY}
+OPP_MULTICAST_MODE STANDARD {for OPP: STANDARD uses explicit multicast copies; USM uses loopback-driven unicast simulated multicast; SAMPLED uses OPP_USM_SAMPLE_PERIOD or OPP_USM_SAMPLE_RATE to choose sampled USM probes and STANDARD for the rest}
+OPP_USM_SAMPLE_PERIOD 1 {legacy SAMPLED setting: choose one USM probe per p same-category probes; equivalent to OPP_USM_SAMPLE_RATE 1 p}
+OPP_USM_SAMPLE_RATE 1 1 {SAMPLED setting: choose numerator/denominator USM probes per same-category sequence; numerator may be 0 for 0% USM; fat-tree samples separately for same-ToR, same-pod cross-ToR, and cross-pod tasks; leaf-spine samples separately for same-leaf and cross-leaf tasks; torus uses one global group per token manager}
+OPP_LOOPBACK_STATS stdout {for OPP with loopback installed, simulator stdout prints per-switch loopback rx probe count, 10us-window, 1us-window, 700ns-window, and 100ns-window peak tx rates, and peak queue bytes}
+OPP_LOOPBACK_TIMESERIES_OUTPUT_FILE loopback_timeseries.csv {optional; for OPP with loopback installed, writes non-zero loopback TX windows as CSV: node,port,role,pod,interval_ns,window_start_ns,bytes,rate_gbps}
+OPP_LOOPBACK_TIMESERIES_POD -1 {optional fat-tree filter for OPP_LOOPBACK_TIMESERIES_OUTPUT_FILE; -1 dumps all switches, otherwise dumps only ToR/Agg switches in the selected PoD}
+OPP_LOOPBACK_RATE_TRACE_OUTPUT_FILE loopback_rate_trace.csv {optional; for one OPP loopback switch, writes fixed-size rate bins relative to the first global loopback TX window}
+OPP_LOOPBACK_RATE_TRACE_NODE 0 {switch node for OPP_LOOPBACK_RATE_TRACE_OUTPUT_FILE}
+OPP_LOOPBACK_RATE_TRACE_START_NS 500000 {relative trace start in ns}
+OPP_LOOPBACK_RATE_TRACE_END_NS 1500000 {relative trace end in ns, exclusive}
+OPP_LOOPBACK_RATE_TRACE_INTERVAL_NS 700 {trace bin size in ns}
+FAT_TREE_K 0 {required when TOPOLOGY_MODE is FAT_TREE; k must be even and host IDs must be 0..k^3/4-1}
+FAT_TREE_FAULT_MODE 0 {fat-tree probe fault injection on Agg(0,0)->Core(0,0), for CC_MODE 11/12/13 only; 0: none, 1: ACL drop all probes, 2: 50% loop back to ingress ToR when normal egress is target Core, 3: 20% link flapping drop, 4: 500us real dequeue delay before target egress}
+FAT_TREE_FAULT_SEED 1 {deterministic seed for FAT_TREE_FAULT_MODE 2 and 3}
+FLOW_FILE mix/flow.txt {input file: flow to generate}
+TRACE_FILE mix/trace.txt {input file: nodes to monitor packet-level events (enqu, dequ, pfc, etc.), will be dumped to TRACE_OUTPUT_FILE}
+TRACE_OUTPUT_FILE mix/mix.tr {output file: packet-level events (enqu, dequ, pfc, etc.)}
+FCT_OUTPUT_FILE mix/fct.txt {output file: flow completion time of different flows}
+PFC_OUTPUT_FILE mix/pfc.txt {output file: result of PFC}
+FLOW_COVERAGE_OUTPUT_FILE mix/flow_coverage.txt {output file: per-flow packet-spray link coverage; FAT_TREE counts only the flow's highest-layer uplinks: host-ToR for same-ToR, ToR-AGG for same-pod cross-ToR, AGG-Core for cross-pod; LEAF_SPINE counts host-leaf for same-leaf and leaf-spine uplinks for cross-leaf}
+ENABLE_RDPROBE_DIAG 0 {0: disable, 1: enable RDPROBE fat-tree diagnosis trace; requires TOPOLOGY_MODE FAT_TREE and CC_MODE 13}
+RDPROBE_DIAG_OUTPUT_FILE mix/rdprobe_diag.txt {output file for RDPROBE diagnosis trace; each line is: time_ns event switch port sip dip sport dport pg seq, where event is I for ingress or E for egress}
+RDPROBE_DIAG_RESULT_OUTPUT_FILE mix/rdprobe_diag_result.txt {output file for RDPROBE fault diagnosis; each line is: src dst pg sport dport found_fault; current implementations: ACL-drop and link-flapping use ingress-without-egress, loop uses illegal fat-tree shortest-path trace, congestion uses switch egress-ingress time >200us}
+ENABLE_RPINGMESH_DIAG 0 {0: disable, 1: enable RPINGMESH fat-tree fault diagnosis; requires TOPOLOGY_MODE FAT_TREE, CC_MODE 11, and FAT_TREE_FAULT_MODE 1..4}
+RPINGMESH_DIAG_RESULT_OUTPUT_FILE mix/rpingmesh_diag_result.txt {output file for RPINGMESH fault diagnosis; each line is: src dst pg sport dport found_fault sent_probes received_acks max_probe_ack_delay_ns ttl_expected ttl_min ttl_max ttl_mismatch_count traceroute_ack_count traceroute_switch_ids traceroute_selected_core traceroute_selected_core_ack_count traceroute_selected_core_max_delay_ns traceroute_fault_core traceroute_result; ACL-drop/link-flapping use missing ACKs, loop uses TTL-mismatch ACK marks, congestion uses probe-to-ACK delay >300us; in ACL-drop and link-flapping modes RPINGMESH sends TTL=3 traceroute probes 50ms after send completion if ACKs are missing, then reports traceroute_result as fn when not triggered, fp when the selected minimum-ACK core is not the faulty core, or tp when it is; in loop mode it sends TTL=3 traceroute probes 50ms after send completion if any ACK marks a TTL fault, and reports traceroute_result as tp/fn; in congestion mode it sends TTL=3 traceroute probes 50ms after send completion if any normal probe ACK delay exceeds 300us, then selects the core with the largest traceroute ACK delay and reports tp only if that delay exceeds 300us and the core matches the faulty link}
+ENABLE_OPP_DIAG 0 {0: disable, 1: enable OPP fat-tree fault diagnosis; requires TOPOLOGY_MODE FAT_TREE, CC_MODE 12, and FAT_TREE_FAULT_MODE 1..4}
+OPP_DIAG_RESULT_OUTPUT_FILE mix/opp_diag_result.txt {output file for OPP fault diagnosis; each line is: src dst pg sport dport found_fault ack_count faulty_ack_count max_qdelay_ns; ACL-drop/link-flapping use ACK-reported faulty_link, loop uses ACK is_loop plus faulty_link, congestion uses ACK maximum_qdelay >200us}
+
+SIMULATOR_STOP_TIME 100.00 {simulation stop time}
+
+CC_MODE 3 {Specifying different CC. 1: DCQCN, 3: HPCC, 7: TIMELY, 8: DCTCP, 10: HPCC-PINT, 11: RPINGMESH, 12: OPP, 13: RDPROBE}
+OPP_TOKENS_PER_TOR 1 {for OPP: number of legal token IDs per server under the same ToR/leaf token manager}
+ALPHA_RESUME_INTERVAL 1 {for DCQCN: the interval of update alpha}
+RATE_DECREASE_INTERVAL 4 {for DCQCN: the interval of rate decrease}
+CLAMP_TARGET_RATE 0 {for DCQCN: whether to reduce target rate upon consecutive rate decrease}
+RP_TIMER 900  {for DCQCN: the interval of rate increase}
+EWMA_GAIN 0.00390625 {for DCQCN and DCTCP: the g of EWMA}
+FAST_RECOVERY_TIMES 1 {for DCQCN: number of times of increase for fast recovery}
+RATE_AI 50Mb/s {Additive increase (not for DCTCP)}
+RATE_HAI 100Mb/s {Hyper additive increase}
+MIN_RATE 100Mb/s {Minimum rate}
+DCTCP_RATE_AI 1000Mb/s {Additive increase for DCTCP}
+
+ERROR_RATE_PER_LINK 0.0000 {Error rate of each link}
+L2_CHUNK_SIZE 4000 {for DCQCN: chunk size}
+L2_ACK_INTERVAL 1 {number of packets between ACK generation, 1 means per packet}
+L2_BACK_TO_ZERO 0 {0: go-back-0, 1: go-back-N}
+
+HAS_WIN 1 {0: no window, 1: has a window}
+GLOBAL_T 1 {0: different server pairs use their own RTT as T, 1: use the max base RTT as the global T}
+VAR_WIN 1 {0: fixed size of window (alwasy maximum), 1: variable window}
+FAST_REACT 1 {0: react once per RTT, 1: react per ACK}
+U_TARGET 0.95 {for HPCC: eta in paper}
+MI_THRESH 0 {for HPCC: maxStage in paper}
+INT_MULTI 1 {for HPCC: multiply the unit of txBytes and qLen in INT header}
+MULTI_RATE 0 {for HPCC: 0: one rate for all hops, 1: one rate per hop}
+SAMPLE_FEEDBACK 0 {for HPCC: 0: get INT per packet, 1: get INT once per RTT or qlen>0}
+PINT_LOG_BASE 1.05 {for HPCC-PINT: the base of the log encoding, equals to (1+epsilon)^2 where epsilon is the error bound. 1.05 corresponds to epsilon=0.025.}
+PINT_PROB 1.0 {for HPCC-PINT: the fraction of packets that carries PINT. 1.0 means 100%.}
+
+RATE_BOUND 1 {0: no rate limitor, 1: use rate limitor}
+
+ACK_HIGH_PRIO 0 {0: ACK has same priority with data packet, 1: prioritize ACK}
+
+LINK_DOWN 0 0 0 {a b c: take down link between b and c at time a. 0 0 0 mean no link down}
+
+ENABLE_TRACE 1 {dump packet-level events or not}
+INIT_DEBUG_LOG 0 {0: disable, 1: print initialization progress with elapsed CPU time and RSS}
+INIT_LINK_DETAIL_LOG 0 {0: disable, 1: print per-segment link initialization timing breakdown when INIT_DEBUG_LOG is enabled}
+SWITCH_INGRESS_PIPELINE_DELAY_NS 400 {fixed switch ingress pipeline latency in ns, applied after packet arrival before switch processing/enqueue; 0 keeps old behavior}
+SWITCH_EGRESS_PIPELINE_DELAY_NS 300 {fixed switch egress pipeline latency in ns, applied after dequeue before physical transmit start; dequeue pacing remains link-rate}
+
+KMAX_MAP 3 25000000000 400 50000000000 800 100000000000 1600 {a map from link bandwidth to ECN threshold kmax}
+KMIN_MAP 3 25000000000 100 50000000000 200 100000000000 400 {a map from link bandwidth to ECN threshold kmin}
+PMAX_MAP 3 25000000000 0.2 50000000000 0.2 100000000000 0.2 {a map from link bandwidth to ECN threshold pmax}
+BUFFER_SIZE 32 {buffer size per switch}
+QLEN_MON_FILE mix/qlen.txt {output file: result of qlen of each port}
+QLEN_MON_START 2000000000 {start time of dumping qlen}
+QLEN_MON_END 2010000000 {end time of dumping qlen}

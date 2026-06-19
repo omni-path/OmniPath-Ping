@@ -10,6 +10,7 @@ network measurement primitive for service tracing under packet spraying.
   result aggregation, and timeout-triggered ACK generation.
 - `solver/unit-merge/`: Rust implementation of the unit-merge grouping solver
   used to derive scalable task/group configurations for large topologies.
+- `NS3/OPP/`: ns-3-based OPP simulator and experiment reproduction scripts.
 
 ## P4 Prototype
 
@@ -29,3 +30,8 @@ cargo run --release --bin dragonfly_test
 
 For configurable solver commands and experiment details, see
 `solver/unit-merge/README.md`.
+
+## NS-3 Simulator
+
+The ns-3 simulator and figure reproduction scripts are under `NS3/OPP/`.
+See `NS3/OPP/README.md` for build commands and experiment runner entry points.
