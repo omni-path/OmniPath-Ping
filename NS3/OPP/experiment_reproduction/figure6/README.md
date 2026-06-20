@@ -6,7 +6,7 @@ Run from the repository root:
 python3 experiment_reproduction/figure6/run_figure6.py
 ```
 
-The runner executes Figure 6 serially.
+The runner executes Figure 6.
 
 Results are written to:
 
@@ -17,8 +17,5 @@ experiment_reproduction/figure6/results/
 Default output files:
 
 ```text
-Figure6(a)_results.csv
-Figure6(b)_results.csv
-Figure6(c)_results.csv
-Figure6(d)_results.csv
+Figure6_results.csv
 ```

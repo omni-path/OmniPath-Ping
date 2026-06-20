@@ -2,3 +2,8 @@
 target/
 *.log
 *.swp
+*.pyc
+__pycache__/
+.lock-waf_*
+.waf-*/
+NS3/OPP/simulation/build/

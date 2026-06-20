@@ -31,7 +31,7 @@ cd simulation
 Then run the experiment scripts from `experiment_reproduction/`, for example:
 
 ```bash
-python3 experiment_reproduction/figure15/run_figure15.py
+python3 experiment_reproduction/figure14/run_figure14.py
 ```
 
 Generated results are written under each figure directory's `results/` folder.
