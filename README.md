@@ -19,17 +19,35 @@ The P4 prototype targets a Tofino/TNA-style programmable switch pipeline. See
 
 ## Unit-Merge Solver
 
-Build and run the reference experiments:
+The unit-merge solver is under `solver/unit-merge/`. It now focuses on six
+ToR/switch-scope examples:
+
+- 32-ary Fat-tree
+- Leaf-spine with 512 leaf switches and 256 spine switches
+- 2D torus, 16 by 16
+- 3D torus, 8 by 8 by 8
+- Dragonfly with 129 groups, 16 switches/group, and 8 global links/switch
+- Dense Dragonfly+ with 33 groups and 32 leaf plus 32 spine switches/group
+
+Run all six examples:
 
 ```bash
 cd solver/unit-merge
-cargo build --release
-cargo run --release --bin clos_test
-cargo run --release --bin dragonfly_test
+bash scripts/reproduce_six_tor_scope.sh
 ```
 
-For configurable solver commands and experiment details, see
-`solver/unit-merge/README.md`.
+Run one example by passing its shortcut:
+
+```bash
+bash scripts/reproduce_six_tor_scope.sh fat-tree
+bash scripts/reproduce_six_tor_scope.sh leaf-spine
+bash scripts/reproduce_six_tor_scope.sh torus2d
+bash scripts/reproduce_six_tor_scope.sh torus3d
+bash scripts/reproduce_six_tor_scope.sh dragonfly
+bash scripts/reproduce_six_tor_scope.sh dragonfly-plus
+```
+
+See `solver/unit-merge/README.md` for the shortcut list.
 
 ## NS-3 Simulator
 
